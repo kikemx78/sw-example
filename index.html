@@ -4,10 +4,127 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@200;700;900&display=swap" rel="stylesheet">  -->
+  <link rel="stylesheet" href="./public/css/main.css" />
+  <style>
+
+    .container {
+      font-family: 'Source Sans Pro', sans-serif;
+      position: relative;
+      max-width: 960px;
+      margin: auto;
+    }
+    
+    .text-block {
+      padding: 15px;
+      width: 100%;
+      color: #fff;
+      text-align: center;
+    }
+
+    .ts {
+      color: #313131; 
+    }
+
+    #service-worker-active {
+      display: none;
+      background: #60ad5e;
+
+    }
+    #new-service-worker-installed {
+      display: none;
+      background: #b71c1c;
+    }
+  </style>
 </head>
+<script>
+  
+  var startTime = Date.now();
+
+</script>
 <body>
-  <div>Service worker examples following</div>
+  <div class="container">
+    <div id="created-at" class="ts text-block"></div>
+    <div id="service-worker-active" class="text-block">Using An Already Active Service Worker</div>
+    <div id="new-service-worker-installed" class="text-block">New Service Worker Version Installed</div>
+    <div id="ended-at" class="ts text-block"></div>
+  </div>
+
 </body>
+<script>
+
+document.getElementById('created-at').innerText = 'Document load start at ' + startTime;
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.13/es5-shim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.5/es6-shim.min.js"></script>
 <script src='./public/js/vendor.js'></script>
-<script src='./public/js/app.js'></script>
+
+<script>
+
+  function contentReady() {
+    var endTime = Date.now();
+    document.getElementById('ended-at').innerText = 'Document load finished. Load time ' + (endTime - startTime) + 'ms';
+  }
+
+  document.addEventListener('DOMContentLoaded', contentReady, false); 
+
+  // If there is no sw registered ; or if we are updating. Requests are
+  // not handled by sw
+
+  if ('serviceWorker' in navigator) {
+
+    // Register sw...
+
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => {
+
+        console.log('sw file registered/detected');
+        console.log(reg);
+
+        // Check if there is an active SW
+
+        if (reg.active) {
+          console.log('using already active sw...');
+          document.getElementById('service-worker-active').style.display='block';
+          document.getElementById('new-service-worker-installed').style.display='none';
+        }
+
+        // notify of any SW updates...
+
+        reg.onupdatefound = function() {
+          
+          const newSw = reg.installing;
+          
+          console.log('updating sw...');
+
+          newSw.onstatechange = function() {
+
+            // gets when a SW has been installed
+
+            if (newSw.state === 'installed') {
+              document.getElementById('service-worker-active').style.display='none';
+              document.getElementById('new-service-worker-installed').style.display='block';
+            }
+
+          };
+        };
+      });
+
+      // Lisent to SW message event...
+      navigator.serviceWorker.onmessage = function (evt) {
+        
+        
+        var msg = JSON.parse(evt.data);
+        const asset = msg.message.split('/');
+        console.log('SW says...', msg.type, asset[asset.length - 1]);
+
+      };
+  
+  } else {
+    console.log('Browser no support for sw...');
+  }
+
+</script>
 </html>
